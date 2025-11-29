@@ -28,9 +28,7 @@ export default function FormBooking() {
   const [booked, setBooked] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const userId = (JSON.parse(localStorage.getItem("user") ?? "") as User)
-    .user_id;
-
+  const user = JSON.parse(localStorage.getItem("user") ?? "") as User;
   useEffect(() => {
     let mounted = true;
     const getBookings = async () => {
@@ -42,8 +40,8 @@ export default function FormBooking() {
         const data = (await res.json()) as Booking[];
         if (!mounted) return;
         setBookings(data);
-        if (userId != null) {
-          const booking = data.find((b) => b.user_id === userId);
+        if (user.user_id != null) {
+          const booking = data.find((b) => b.user_id === user.user_id);
           if (booking) {
             setBooked(booking.date);
           }
@@ -59,7 +57,7 @@ export default function FormBooking() {
     return () => {
       mounted = false;
     };
-  }, [userId]);
+  }, [user.user_id]);
 
   const hoursPossible = useMemo(() => {
     if (!day) return [];
@@ -84,9 +82,10 @@ export default function FormBooking() {
         headers: { "Content-type": "application/json" },
         body: JSON.stringify({
           date: new Date(`${day}T${hour.replace(/^T/, "")}`),
-          user_id: userId,
+          user_id: user.user_id,
         }),
       });
+      await fetch(`http://localhost:1234/users/${user.user_id}/booking_email`);
     } catch (error) {
       console.error(error);
     }
@@ -104,7 +103,7 @@ export default function FormBooking() {
   const deleteBookedCall = () => {
     const deleteMyCall = async () => {
       try {
-        await fetch(`http://localhost:1234/bookings/${userId}`, {
+        await fetch(`http://localhost:1234/bookings/${user.user_id}`, {
           method: "DELETE",
         });
         window.location.href = "/booking";
